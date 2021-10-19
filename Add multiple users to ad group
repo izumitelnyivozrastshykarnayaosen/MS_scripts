@@ -1,0 +1,21 @@
+#Add multiple users to one group
+
+Import-module ActiveDirectory 
+
+$gname = Read-Host "Enter Group Name:"
+$file = Read-Host "Enter path to the file (ex: C:\Users\username\filename.csv"
+
+$Users = Import-Csv "$file" 
+
+foreach ($user in $users) 
+
+{ 
+
+$upn = $user.email_address 
+
+get-aduser -filter "userprincipalname -eq '$upn'" | 
+
+% {add-adgroupmember -identity "$gname" -members $_} -Verbose 
+
+} 
+
