@@ -1,0 +1,18 @@
+#Getting the part of group name we will use as a wildcard 
+$wildcard = Read-Host "Please enter part of the group name (without *)" 
+
+#Searching for groups by wildcard and exporting it to the file 
+get-adgroup -filter {name -like "*$wildcard*"} -properties Description, info | select name | Sort name | EXport-Csv -Path "C:\Users\%username%\Desktop\$wildcard.csv" -NoTypeInformation 
+
+#setting variable groups which uses content from the file exported above 
+$groups = import-CSV "C:\Users\%username%\Desktop\$wildcard.csv" 
+
+#For each group from the file we will apply further cycle 
+foreach($group in $groups)  
+
+#We take each group (.name specifies the column) and export each member of it. -Append parameter makes it possible keep it in one file as it adds the information to the existing file. 
+{ 
+
+Get-AdGroupMember $group.name -Recursive | select name | Export-CSV -Path "C:\users\%username%\desktop\groups\$($group.name).csv" -Append -NoTypeInformation -Encoding UTF8 
+
+} 

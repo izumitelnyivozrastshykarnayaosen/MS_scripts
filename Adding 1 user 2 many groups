@@ -1,0 +1,76 @@
+
+#Notification 
+
+Write-Host "Prior to use the script, please prepare .csv file with the list of groups. Use commas for separation" 
+
+#Acquiring the username  
+
+$uname = Read-Host "Pls Enter Username"  
+
+#Specify the file name 
+
+$filepath = Read-Host "Please enter the file path" 
+
+#Getting content for variable: groups from the prepared csv file for further use 
+
+$groups = Import-Csv "$filepath" 
+
+#For each group in the file groups, the further cycle will be applied 
+
+Foreach ($group in $groups) 
+
+#Here we take a user account and specify MemberOf Property of the object.  
+#The main difference between Add-ADGroupMember and cmdlet used here is  
+#That in this script we add Membership to a user object, not user object to a agroup 
+
+{ 
+Add-ADPrincipalGroupMembership -Identity $uname -MemberOf $group.Groups 
+} 
+
+#CHECKING THE RESULT 
+#Creating empty array; It will be fulfilled further  
+
+$result= @() 
+
+#Cycle where we take each group from $filepath and apply next cmdlet to it 
+
+foreach ($group in $groups) 
+
+#Fulfilling array 
+#Below cycle retrieves group membership of the user, but returns as a result 
+#Only matches with the list of initially requested groups 
+
+{ 
+$result += Get-ADPrincipalGroupMembership -Identity $uname -ErrorAction Inquire |select name | 
+
+Where-Object {$_ -like "*$group*"}  | 
+
+Sort name 
+} 
+
+#Exporting fulfilled array as .csv file. 
+
+$result | Export-Csv C:\users\%username%\Desktop\result.csv -NoTypeInformation 
+
+#Comparing initial file $filepath and $result 
+#Setting up variable $comaprison to two values 
+#To be able to use it for IF ELSE 
+
+$comparison = $null #For emply Output 
+
+$comparison = Compare-Object -ReferenceObject (Get-Content -Path $filepath) -DifferenceObject (Get-Content -Path C:\Users\%username%\Desktop\result.csv) 
+
+#If the output of Compare-Object is not empty,missing groups will be displayed 
+#Otherwise sweet success message is displayed 
+
+IF ($comparison -ne $null) 
+
+{ 
+$comparison | select InputObject 
+} 
+
+Else 
+
+{ 
+Write-Host "Everyhing's fine, ask user to reboot within 1 hour" 
+} 
